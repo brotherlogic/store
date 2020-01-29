@@ -10,7 +10,6 @@ import (
 
 func TestApplyInt64Mutation(t *testing.T) {
 	s := InitTestServer()
-	s.doNothing()
 
 	tstart := time.Now().Unix()
 	adj := &rcpb.ReleaseMetadata{DateAdded: tstart}
@@ -33,7 +32,6 @@ func TestApplyInt64Mutation(t *testing.T) {
 
 func TestApplyStringMutation(t *testing.T) {
 	s := InitTestServer()
-	s.doNothing()
 
 	adj := &rcpb.ReleaseMetadata{FilePath: "first"}
 

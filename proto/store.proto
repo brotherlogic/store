@@ -20,3 +20,12 @@ message WriteRequest {
   Key key = 1;
   repeated Mutation mutations = 2;
 }
+
+message WriteResponse {
+  Key key = 1;
+}
+
+service StoreService {
+  rpc Write(WriteRequest) returns (WriteResponse) {};
+  
+}
