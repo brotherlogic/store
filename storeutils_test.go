@@ -8,6 +8,19 @@ import (
 	pb "github.com/brotherlogic/store/proto"
 )
 
+func TestBuildMutation(t *testing.T) {
+	t1 := time.Now().Unix()
+	t2 := time.Now().Add(time.Minute).Unix()
+	pb1 := &rcpb.ReleaseMetadata{DateAdded: t1}
+	pb2 := &rcpb.ReleaseMetadata{DateAdded: t2}
+
+	mutations := buildMutations(pb1, pb2)
+
+	if len(mutations) != 1 {
+		t.Fatalf("Error building mutations: %v", len(mutations))
+	}
+}
+
 func TestApplyInt64Mutation(t *testing.T) {
 	s := InitTestServer()
 

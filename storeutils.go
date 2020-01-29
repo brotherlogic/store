@@ -20,3 +20,32 @@ func (s *Server) applyMutation(base proto.Message, mutation *pb.Mutation) (proto
 
 	return base, nil
 }
+
+func buildMutations(p1, p2 proto.Message) []*pb.Mutation {
+	p1e := reflect.ValueOf(p1).Elem()
+	p2e := reflect.ValueOf(p2).Elem()
+
+	return buildStruct(p1e, p2e)
+}
+
+func buildStruct(p1, p2 reflect.Value) []*pb.Mutation {
+	mutations := []*pb.Mutation{}
+	for i := 0; i < p1.NumField(); i++ {
+		nmut := buildFieldMutations(i, p1.Field(i), p2.Field(i))
+		mutations = append(mutations, nmut...)
+	}
+	return mutations
+}
+
+func buildFieldMutations(fieldNum int, p1, p2 reflect.Value) []*pb.Mutation {
+	mutations := []*pb.Mutation{}
+
+	switch p1.Kind() {
+	case reflect.Int64:
+		if p1.Int() != p2.Int() {
+			mutations = append(mutations, &pb.Mutation{Field: int32(fieldNum), Value: &pb.Mutation_Int64Value{int64(p2.Int())}})
+		}
+	}
+
+	return mutations
+}
