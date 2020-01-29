@@ -6,7 +6,6 @@ package store
 import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	any "github.com/golang/protobuf/ptypes/any"
 	math "math"
 )
 
@@ -22,11 +21,14 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type Mutation struct {
-	Field                int32    `protobuf:"varint,1,opt,name=field,proto3" json:"field,omitempty"`
-	NewValue             *any.Any `protobuf:"bytes,2,opt,name=new_value,json=newValue,proto3" json:"new_value,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Field int32 `protobuf:"varint,1,opt,name=field,proto3" json:"field,omitempty"`
+	// Types that are valid to be assigned to Value:
+	//	*Mutation_StringValue
+	//	*Mutation_Int64Value
+	Value                isMutation_Value `protobuf_oneof:"value"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *Mutation) Reset()         { *m = Mutation{} }
@@ -61,11 +63,106 @@ func (m *Mutation) GetField() int32 {
 	return 0
 }
 
-func (m *Mutation) GetNewValue() *any.Any {
+type isMutation_Value interface {
+	isMutation_Value()
+}
+
+type Mutation_StringValue struct {
+	StringValue string `protobuf:"bytes,2,opt,name=string_value,json=stringValue,proto3,oneof"`
+}
+
+type Mutation_Int64Value struct {
+	Int64Value int64 `protobuf:"varint,3,opt,name=int64_value,json=int64Value,proto3,oneof"`
+}
+
+func (*Mutation_StringValue) isMutation_Value() {}
+
+func (*Mutation_Int64Value) isMutation_Value() {}
+
+func (m *Mutation) GetValue() isMutation_Value {
 	if m != nil {
-		return m.NewValue
+		return m.Value
 	}
 	return nil
+}
+
+func (m *Mutation) GetStringValue() string {
+	if x, ok := m.GetValue().(*Mutation_StringValue); ok {
+		return x.StringValue
+	}
+	return ""
+}
+
+func (m *Mutation) GetInt64Value() int64 {
+	if x, ok := m.GetValue().(*Mutation_Int64Value); ok {
+		return x.Int64Value
+	}
+	return 0
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*Mutation) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Mutation_OneofMarshaler, _Mutation_OneofUnmarshaler, _Mutation_OneofSizer, []interface{}{
+		(*Mutation_StringValue)(nil),
+		(*Mutation_Int64Value)(nil),
+	}
+}
+
+func _Mutation_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*Mutation)
+	// value
+	switch x := m.Value.(type) {
+	case *Mutation_StringValue:
+		b.EncodeVarint(2<<3 | proto.WireBytes)
+		b.EncodeStringBytes(x.StringValue)
+	case *Mutation_Int64Value:
+		b.EncodeVarint(3<<3 | proto.WireVarint)
+		b.EncodeVarint(uint64(x.Int64Value))
+	case nil:
+	default:
+		return fmt.Errorf("Mutation.Value has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _Mutation_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*Mutation)
+	switch tag {
+	case 2: // value.string_value
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		x, err := b.DecodeStringBytes()
+		m.Value = &Mutation_StringValue{x}
+		return true, err
+	case 3: // value.int64_value
+		if wire != proto.WireVarint {
+			return true, proto.ErrInternalBadWireType
+		}
+		x, err := b.DecodeVarint()
+		m.Value = &Mutation_Int64Value{int64(x)}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _Mutation_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Mutation)
+	// value
+	switch x := m.Value.(type) {
+	case *Mutation_StringValue:
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(len(x.StringValue)))
+		n += len(x.StringValue)
+	case *Mutation_Int64Value:
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(x.Int64Value))
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
 }
 
 type Key struct {
@@ -115,25 +212,76 @@ func (m *Key) GetVersion() int32 {
 	return 0
 }
 
+type WriteRequest struct {
+	Key                  *Key        `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Mutations            []*Mutation `protobuf:"bytes,2,rep,name=mutations,proto3" json:"mutations,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
+}
+
+func (m *WriteRequest) Reset()         { *m = WriteRequest{} }
+func (m *WriteRequest) String() string { return proto.CompactTextString(m) }
+func (*WriteRequest) ProtoMessage()    {}
+func (*WriteRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_98bbca36ef968dfc, []int{2}
+}
+
+func (m *WriteRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WriteRequest.Unmarshal(m, b)
+}
+func (m *WriteRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WriteRequest.Marshal(b, m, deterministic)
+}
+func (m *WriteRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WriteRequest.Merge(m, src)
+}
+func (m *WriteRequest) XXX_Size() int {
+	return xxx_messageInfo_WriteRequest.Size(m)
+}
+func (m *WriteRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_WriteRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_WriteRequest proto.InternalMessageInfo
+
+func (m *WriteRequest) GetKey() *Key {
+	if m != nil {
+		return m.Key
+	}
+	return nil
+}
+
+func (m *WriteRequest) GetMutations() []*Mutation {
+	if m != nil {
+		return m.Mutations
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*Mutation)(nil), "store.Mutation")
 	proto.RegisterType((*Key)(nil), "store.Key")
+	proto.RegisterType((*WriteRequest)(nil), "store.WriteRequest")
 }
 
 func init() { proto.RegisterFile("store.proto", fileDescriptor_98bbca36ef968dfc) }
 
 var fileDescriptor_98bbca36ef968dfc = []byte{
-	// 192 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x34, 0x8d, 0x31, 0x4f, 0xc6, 0x20,
-	0x10, 0x86, 0x53, 0x15, 0xfd, 0x3e, 0xba, 0x91, 0x0e, 0x8d, 0x53, 0xd3, 0xa9, 0x13, 0x44, 0xfb,
-	0x0b, 0x9c, 0x8d, 0x0b, 0x26, 0xae, 0x06, 0xf4, 0x4a, 0x49, 0x90, 0x23, 0x2d, 0xb4, 0xe1, 0xdf,
-	0x9b, 0x52, 0x1d, 0x2e, 0xb9, 0x27, 0x77, 0xef, 0xf3, 0xd2, 0x7a, 0x8d, 0xb8, 0x00, 0x0f, 0x0b,
-	0x46, 0x64, 0xa4, 0xc0, 0xa3, 0x30, 0x36, 0xce, 0x49, 0xf3, 0x2f, 0xfc, 0x11, 0x06, 0x9d, 0xf2,
-	0x46, 0x94, 0xbb, 0x4e, 0x93, 0x08, 0x31, 0x07, 0x58, 0x85, 0xf2, 0xf9, 0x98, 0x33, 0xd7, 0xbf,
-	0xd3, 0xcb, 0x5b, 0x8a, 0x2a, 0x5a, 0xf4, 0xac, 0xa1, 0x64, 0xb2, 0xe0, 0xbe, 0xdb, 0xaa, 0xab,
-	0x06, 0x22, 0x4f, 0x60, 0x4f, 0xf4, 0xea, 0x61, 0xff, 0xdc, 0x94, 0x4b, 0xd0, 0xde, 0x74, 0xd5,
-	0x50, 0x3f, 0x37, 0xdc, 0x20, 0x1a, 0xf7, 0xd7, 0xad, 0xd3, 0xc4, 0x5f, 0x7c, 0x96, 0x17, 0x0f,
-	0xfb, 0xc7, 0xf1, 0xd5, 0x8f, 0xf4, 0xf6, 0x15, 0x32, 0x63, 0xf4, 0x2e, 0xa8, 0x38, 0x17, 0xdd,
-	0x55, 0x96, 0x9d, 0xb5, 0xf4, 0x61, 0x83, 0x65, 0xb5, 0xe8, 0x8b, 0x8b, 0xc8, 0x7f, 0xd4, 0xf7,
-	0x45, 0x36, 0xfe, 0x06, 0x00, 0x00, 0xff, 0xff, 0xa2, 0x97, 0x1f, 0x8c, 0xd7, 0x00, 0x00, 0x00,
+	// 229 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x44, 0x90, 0x31, 0x4f, 0xc3, 0x30,
+	0x10, 0x85, 0x9b, 0x1a, 0x53, 0x72, 0xae, 0x84, 0x74, 0x62, 0xc8, 0xc0, 0x10, 0xc2, 0x92, 0x85,
+	0x0e, 0x2d, 0xe2, 0x07, 0x30, 0x55, 0xaa, 0x58, 0x6e, 0x80, 0x81, 0x01, 0x05, 0x71, 0x80, 0x45,
+	0x89, 0x5b, 0xfb, 0x52, 0x29, 0xff, 0x1e, 0xf5, 0x92, 0x8a, 0xcd, 0xef, 0xf3, 0x67, 0x3d, 0x3d,
+	0x83, 0x4b, 0x12, 0x22, 0x2f, 0x76, 0x31, 0x48, 0x40, 0xab, 0xa1, 0xda, 0xc3, 0xc5, 0x53, 0x27,
+	0x8d, 0xf8, 0xd0, 0xe2, 0x15, 0xd8, 0x4f, 0xcf, 0xdb, 0x8f, 0x22, 0x2b, 0xb3, 0xda, 0xd2, 0x10,
+	0xf0, 0x16, 0xe6, 0x49, 0xa2, 0x6f, 0xbf, 0xde, 0x0e, 0xcd, 0xb6, 0xe3, 0x62, 0x5a, 0x66, 0x75,
+	0xbe, 0x9e, 0x90, 0x1b, 0xe8, 0xf3, 0x11, 0xe2, 0x0d, 0x38, 0xdf, 0xca, 0xc3, 0xfd, 0xe8, 0x98,
+	0x32, 0xab, 0xcd, 0x7a, 0x42, 0xa0, 0x50, 0x95, 0xc7, 0x19, 0x58, 0xbd, 0xac, 0x56, 0x60, 0x36,
+	0xdc, 0x23, 0xc2, 0xd9, 0xae, 0x91, 0x6f, 0x2d, 0xcb, 0x49, 0xcf, 0x58, 0xc0, 0xec, 0xc0, 0x31,
+	0xf9, 0xd0, 0x6a, 0x8d, 0xa5, 0x53, 0xac, 0x5e, 0x61, 0xfe, 0x12, 0xbd, 0x30, 0xf1, 0xbe, 0xe3,
+	0x24, 0x78, 0x0d, 0xe6, 0x87, 0x7b, 0x7d, 0xec, 0x96, 0xb0, 0x18, 0x96, 0x6d, 0xb8, 0xa7, 0x23,
+	0xc6, 0x3b, 0xc8, 0x7f, 0xc7, 0x55, 0xa9, 0x98, 0x96, 0xa6, 0x76, 0xcb, 0xcb, 0xd1, 0x39, 0xad,
+	0xa5, 0x7f, 0xe3, 0xfd, 0x5c, 0xbf, 0x64, 0xf5, 0x17, 0x00, 0x00, 0xff, 0xff, 0x47, 0x80, 0x56,
+	0x17, 0x21, 0x01, 0x00, 0x00,
 }
