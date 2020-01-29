@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/golang/protobuf/proto"
@@ -11,7 +12,11 @@ import (
 func (s *Server) applyMutation(base proto.Message, mutation *pb.Mutation) (proto.Message, error) {
 	val := reflect.ValueOf(base).Elem()
 
-	switch x := mutation.Value.(type) {
+	if val.NumField() < int(mutation.GetField()) {
+		return base, fmt.Errorf("Bad field number: %v", mutation.GetField())
+	}
+
+	switch x := mutation.GetValue().(type) {
 	case *pb.Mutation_StringValue:
 		val.Field(int(mutation.GetField())).SetString(x.StringValue)
 	case *pb.Mutation_Int64Value:
