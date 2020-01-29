@@ -17,12 +17,14 @@ import (
 //Server main server type
 type Server struct {
 	*goserver.GoServer
+	savePath string
 }
 
 // Init builds the server
 func Init() *Server {
 	s := &Server{
 		GoServer: &goserver.GoServer{},
+		savePath: "/media/raid1/scratch/store/",
 	}
 	return s
 }
