@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package store;
 
+import "github.com/golang/protobuf/ptypes/any/any.proto";
+
 message Mutation {
   int32 field = 1;
 
@@ -19,11 +21,13 @@ message Key {
 message WriteRequest {
   Key key = 1;
   repeated Mutation mutations = 2;
+  google.protobuf.Any init = 3;
 }
 
 message WriteResponse {
   Key key = 1;
 }
+
 
 service StoreService {
   rpc Write(WriteRequest) returns (WriteResponse) {};
